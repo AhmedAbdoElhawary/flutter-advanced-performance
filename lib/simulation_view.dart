@@ -1,4 +1,3 @@
-import 'dart:typed_data' show Float32List;
 import 'dart:ui' show PointMode;
 
 import 'package:flutter/material.dart';
@@ -24,7 +23,6 @@ class _SimulationViewState extends State<SimulationView> with SingleTickerProvid
   Size _fieldSize = Size.zero;
   Duration _windowStart = Duration.zero;
   int _frames = 0;
-  int _stepMicros = 0;
 
   @override
   void initState() {
@@ -50,17 +48,14 @@ class _SimulationViewState extends State<SimulationView> with SingleTickerProvid
     _stopwatch.stop();
 
     _frames++;
-    _stepMicros += _stopwatch.elapsedMicroseconds;
 
     final window = elapsed - _windowStart;
     if (window < const Duration(seconds: 1)) return;
 
     _stats.value = FrameStats(
       fps: (_frames * Duration.microsecondsPerSecond / window.inMicroseconds).round(),
-      stepMs: _stepMicros / _frames / 1000,
     );
     _frames = 0;
-    _stepMicros = 0;
     _windowStart = elapsed;
   }
 
@@ -97,12 +92,11 @@ class _SimulationViewState extends State<SimulationView> with SingleTickerProvid
 }
 
 class FrameStats {
-  const FrameStats({required this.fps, required this.stepMs});
+  const FrameStats({required this.fps});
 
-  static const empty = FrameStats(fps: 0, stepMs: 0);
+  static const empty = FrameStats(fps: 0);
 
   final int fps;
-  final double stepMs;
 }
 
 class _StatsRow extends StatelessWidget {
@@ -114,23 +108,23 @@ class _StatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const muted = TextStyle(fontSize: 14, color: Color(0xFFB8BCC2));
-    final objects = newObjects >= 1000 ? '${(newObjects / 1000).round()}k' : '$newObjects';
+    const muted = TextStyle(fontSize: 34, color: Color(0xFFB8BCC2));
+    final objects = switch (newObjects) {
+      >= 1000000 => '${(newObjects / 1000000).toStringAsFixed(1)}M',
+      >= 1000 => '${(newObjects / 1000).round()}k',
+      _ => '$newObjects',
+    };
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.baseline,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       textBaseline: TextBaseline.alphabetic,
       children: [
         Text(
           '${stats.fps} FPS',
-          style: TextStyle(fontSize: 28, fontWeight: FontWeight.w600, color: color),
+          style: TextStyle(fontSize: 48, fontWeight: FontWeight.w600, color: color),
         ),
-        const SizedBox(width: 18),
-        Flexible(
-          child: Text('$objects objects/frame', style: muted, overflow: TextOverflow.ellipsis),
-        ),
-        const SizedBox(width: 18),
-        Text('step ${stats.stepMs.toStringAsFixed(1)} ms', style: muted),
+        Text('$objects objects/frame', style: muted, overflow: TextOverflow.ellipsis),
       ],
     );
   }
@@ -140,21 +134,14 @@ class ParticlePainter extends CustomPainter {
   ParticlePainter(this.simulation, Color color)
     : _dotPaint = Paint()
         ..color = color
-        ..strokeWidth = 3
-        ..strokeCap = StrokeCap.round,
-      _linePaint = Paint()
-        ..color = color.withValues(alpha: 0.25)
-        ..strokeWidth = 1,
+        ..strokeWidth = 2,
       super(repaint: simulation);
 
   final CustomSimulation simulation;
   final Paint _dotPaint;
-  final Paint _linePaint;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final lines = Float32List.sublistView(simulation.lines, 0, simulation.lineCount * 4);
-    canvas.drawRawPoints(PointMode.lines, lines, _linePaint);
     canvas.drawRawPoints(PointMode.points, simulation.points, _dotPaint);
   }
 
