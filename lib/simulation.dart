@@ -14,7 +14,7 @@ enum StorageKind {
 }
 
 abstract class CustomSimulation extends ChangeNotifier {
-  CustomSimulation(this.count) : points = Float32List(count * 2), lines = Float32List(maxLines * 4);
+  CustomSimulation(this.count) : points = Float32List(count * 2);
 
   factory CustomSimulation.create(StorageKind kind, int count) {
     return switch (kind) {
@@ -23,27 +23,28 @@ abstract class CustomSimulation extends ChangeNotifier {
     };
   }
 
-  static const double dt = 1 / 60;
-  static const double spring = 4;
-  static const int linkedCount = 300;
-  static const double linkReach = 60;
-  static const int maxLines = 5000;
+  static const int substeps = 8;
+  static const double dt = 1 / 60 / substeps;
+  static const double spring = 8;
 
   final int count;
   final Float32List points;
-  final Float32List lines;
-  int lineCount = 0;
 
   int get newObjectsPerFrame;
 
   void step(Size size) {
-    moveParticles(size.width, size.height);
-    _linkNearby();
+    for (var i = 0; i < substeps; i++) {
+      moveParticles();
+    }
+    writePoints(size.width, size.height);
     notifyListeners();
   }
 
   @protected
-  void moveParticles(double width, double height);
+  void moveParticles();
+
+  @protected
+  void writePoints(double width, double height);
 
   @protected
   void seed(void Function(int i, double x, double y, double vx, double vy) write) {
@@ -54,34 +55,6 @@ abstract class CustomSimulation extends ChangeNotifier {
       final speed = 1 + random.nextDouble() * 2;
       write(i, x, y, -(y - 0.5) * speed, (x - 0.5) * speed);
     }
-  }
-
-  void _linkNearby() {
-    final linked = min(count, linkedCount);
-    const reachSquared = linkReach * linkReach;
-    var segments = 0;
-
-    for (var i = 0; i < linked && segments < maxLines; i++) {
-      final x1 = points[i * 2];
-      final y1 = points[i * 2 + 1];
-
-      for (var j = i + 1; j < linked && segments < maxLines; j++) {
-        final x2 = points[j * 2];
-        final y2 = points[j * 2 + 1];
-        final dx = x2 - x1;
-        final dy = y2 - y1;
-        if (dx * dx + dy * dy > reachSquared) continue;
-
-        final k = segments * 4;
-        lines[k] = x1;
-        lines[k + 1] = y1;
-        lines[k + 2] = x2;
-        lines[k + 3] = y2;
-        segments++;
-      }
-    }
-
-    lineCount = segments;
   }
 }
 
@@ -111,11 +84,11 @@ class BoxedSimulation extends CustomSimulation {
   final List<double> _ay;
 
   @override
-  int get newObjectsPerFrame => count * 6;
+  int get newObjectsPerFrame => count * 6 * CustomSimulation.substeps;
 
-  // Same math as TypedSimulation on purpose: only the list type differs.
+  // duplicated on purpose, shared code over List<double> makes Float64List box too
   @override
-  void moveParticles(double width, double height) {
+  void moveParticles() {
     for (var i = 0; i < count; i++) {
       _ax[i] = -(_x[i] - 0.5) * CustomSimulation.spring;
       _ay[i] = -(_y[i] - 0.5) * CustomSimulation.spring;
@@ -134,7 +107,12 @@ class BoxedSimulation extends CustomSimulation {
         _y[i] = _y[i] < 0.0 ? 0.0 : 1.0;
         _vy[i] = -_vy[i];
       }
+    }
+  }
 
+  @override
+  void writePoints(double width, double height) {
+    for (var i = 0; i < count; i++) {
       points[i * 2] = _x[i] * width;
       points[i * 2 + 1] = _y[i] * height;
     }
@@ -168,7 +146,7 @@ class TypedSimulation extends CustomSimulation {
   int get newObjectsPerFrame => 0;
 
   @override
-  void moveParticles(double width, double height) {
+  void moveParticles() {
     for (var i = 0; i < count; i++) {
       _ax[i] = -(_x[i] - 0.5) * CustomSimulation.spring;
       _ay[i] = -(_y[i] - 0.5) * CustomSimulation.spring;
@@ -187,7 +165,12 @@ class TypedSimulation extends CustomSimulation {
         _y[i] = _y[i] < 0.0 ? 0.0 : 1.0;
         _vy[i] = -_vy[i];
       }
+    }
+  }
 
+  @override
+  void writePoints(double width, double height) {
+    for (var i = 0; i < count; i++) {
       points[i * 2] = _x[i] * width;
       points[i * 2 + 1] = _y[i] * height;
     }
