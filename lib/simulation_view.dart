@@ -1,3 +1,4 @@
+import 'dart:math' show pi;
 import 'dart:ui' show PointMode;
 
 import 'package:flutter/material.dart';
@@ -69,7 +70,7 @@ class _SimulationViewState extends State<SimulationView> with SingleTickerProvid
         ValueListenableBuilder(
           valueListenable: _stats,
           builder: (context, stats, _) =>
-              _StatsRow(stats: stats, newObjects: _simulation.newObjectsPerFrame, color: color),
+              _StatsRow(stats: stats, count: widget.count, newObjects: _simulation.newObjectsPerFrame, color: color),
         ),
         const SizedBox(height: 16),
         Expanded(
@@ -100,9 +101,10 @@ class FrameStats {
 }
 
 class _StatsRow extends StatelessWidget {
-  const _StatsRow({required this.stats, required this.newObjects, required this.color});
+  const _StatsRow({required this.stats, required this.count, required this.newObjects, required this.color});
 
   final FrameStats stats;
+  final int count;
   final int newObjects;
   final Color color;
 
@@ -114,17 +116,31 @@ class _StatsRow extends StatelessWidget {
       >= 1000 => '${(newObjects / 1000).round()}k',
       _ => '$newObjects',
     };
+    final dots = '$count'.replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
+    var info = '$dots dots';
+    if (stats.fps > 0) {
+      final timeScale = stats.fps * CustomSimulation.dt * CustomSimulation.stepsPerFrame;
+      final fastestLap = (2 * pi / CustomSimulation.maxSpeed / timeScale).round();
+      final slowestLap = (2 * pi / CustomSimulation.minSpeed / timeScale).round();
+      info += ' · 1 lap every $fastestLap–$slowestLap s';
+    }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      textBaseline: TextBaseline.alphabetic,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          '${stats.fps} FPS',
-          style: TextStyle(fontSize: 48, fontWeight: FontWeight.w600, color: color),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              '${stats.fps} FPS',
+              style: TextStyle(fontSize: 48, fontWeight: FontWeight.w600, color: color),
+            ),
+            Text('$objects objects/frame', style: muted, overflow: TextOverflow.ellipsis),
+          ],
         ),
-        Text('$objects objects/frame', style: muted, overflow: TextOverflow.ellipsis),
+        Text(info, style: muted, overflow: TextOverflow.ellipsis),
       ],
     );
   }
