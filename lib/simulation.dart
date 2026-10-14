@@ -13,6 +13,10 @@ enum StorageKind {
   final Color color;
 }
 
+/// For [moveParticles] and [writePoints] cannot be in the contract, why?
+/// becuase [_x], [_y], and [_speed],
+/// you cannot unified them and find the common between List<double> and Float64,
+///
 abstract class CustomSimulation extends ChangeNotifier {
   CustomSimulation(this.count) : points = Float32List(count * 2);
 
@@ -23,9 +27,10 @@ abstract class CustomSimulation extends ChangeNotifier {
     };
   }
 
-  static const int substeps = 8;
-  static const double dt = 1 / 60 / substeps;
-  static const double spring = 8;
+  static const int stepsPerFrame = 64;
+  static const double dt = 1 / 60 / stepsPerFrame;
+  static const double minSpeed = 0.5;
+  static const double maxSpeed = 1.5;
 
   final int count;
   final Float32List points;
@@ -33,7 +38,7 @@ abstract class CustomSimulation extends ChangeNotifier {
   int get newObjectsPerFrame;
 
   void step(Size size) {
-    for (var i = 0; i < substeps; i++) {
+    for (var i = 0; i < stepsPerFrame; i++) {
       moveParticles();
     }
     writePoints(size.width, size.height);
@@ -47,30 +52,23 @@ abstract class CustomSimulation extends ChangeNotifier {
   void writePoints(double width, double height);
 
   @protected
-  void seed(void Function(int i, double x, double y, double vx, double vy) write) {
+  void seed(void Function(int i, double x, double y, double speed) write) {
     final random = Random(42);
     for (var i = 0; i < count; i++) {
-      final x = random.nextDouble();
-      final y = random.nextDouble();
-      final speed = 1 + random.nextDouble() * 2;
-      write(i, x, y, -(y - 0.5) * speed, (x - 0.5) * speed);
+      final radius = random.nextDouble();
+      final angle = random.nextDouble() * 2 * pi;
+      final speed = minSpeed + random.nextDouble() * (maxSpeed - minSpeed);
+      write(i, radius * cos(angle), radius * sin(angle), speed);
     }
   }
 }
 
 class BoxedSimulation extends CustomSimulation {
-  BoxedSimulation(super.count)
-    : _x = _zeros(count),
-      _y = _zeros(count),
-      _vx = _zeros(count),
-      _vy = _zeros(count),
-      _ax = _zeros(count),
-      _ay = _zeros(count) {
-    seed((i, x, y, vx, vy) {
+  BoxedSimulation(super.count) : _x = _zeros(count), _y = _zeros(count), _speed = _zeros(count) {
+    seed((i, x, y, speed) {
       _x[i] = x;
       _y[i] = y;
-      _vx[i] = vx;
-      _vy[i] = vy;
+      _speed[i] = speed;
     });
   }
 
@@ -78,43 +76,25 @@ class BoxedSimulation extends CustomSimulation {
 
   final List<double> _x;
   final List<double> _y;
-  final List<double> _vx;
-  final List<double> _vy;
-  final List<double> _ax;
-  final List<double> _ay;
+  final List<double> _speed;
 
   @override
-  int get newObjectsPerFrame => count * 6 * CustomSimulation.substeps;
+  int get newObjectsPerFrame => count * 2 * CustomSimulation.stepsPerFrame;
 
-  // duplicated on purpose, shared code over List<double> makes Float64List box too
   @override
   void moveParticles() {
     for (var i = 0; i < count; i++) {
-      _ax[i] = -(_x[i] - 0.5) * CustomSimulation.spring;
-      _ay[i] = -(_y[i] - 0.5) * CustomSimulation.spring;
-
-      _vx[i] += _ax[i] * CustomSimulation.dt;
-      _vy[i] += _ay[i] * CustomSimulation.dt;
-
-      _x[i] += _vx[i] * CustomSimulation.dt;
-      _y[i] += _vy[i] * CustomSimulation.dt;
-
-      if (_x[i] < 0.0 || _x[i] > 1.0) {
-        _x[i] = _x[i] < 0.0 ? 0.0 : 1.0;
-        _vx[i] = -_vx[i];
-      }
-      if (_y[i] < 0.0 || _y[i] > 1.0) {
-        _y[i] = _y[i] < 0.0 ? 0.0 : 1.0;
-        _vy[i] = -_vy[i];
-      }
+      _x[i] -= _y[i] * _speed[i] * CustomSimulation.dt;
+      _y[i] += _x[i] * _speed[i] * CustomSimulation.dt;
     }
   }
 
   @override
   void writePoints(double width, double height) {
+    final radius = min(width, height) / 2;
     for (var i = 0; i < count; i++) {
-      points[i * 2] = _x[i] * width;
-      points[i * 2 + 1] = _y[i] * height;
+      points[i * 2] = width / 2 + _x[i] * radius;
+      points[i * 2 + 1] = height / 2 + _y[i] * radius;
     }
   }
 }
@@ -123,24 +103,17 @@ class TypedSimulation extends CustomSimulation {
   TypedSimulation(super.count)
     : _x = Float64List(count),
       _y = Float64List(count),
-      _vx = Float64List(count),
-      _vy = Float64List(count),
-      _ax = Float64List(count),
-      _ay = Float64List(count) {
-    seed((i, x, y, vx, vy) {
+      _speed = Float64List(count) {
+    seed((i, x, y, speed) {
       _x[i] = x;
       _y[i] = y;
-      _vx[i] = vx;
-      _vy[i] = vy;
+      _speed[i] = speed;
     });
   }
 
   final Float64List _x;
   final Float64List _y;
-  final Float64List _vx;
-  final Float64List _vy;
-  final Float64List _ax;
-  final Float64List _ay;
+  final Float64List _speed;
 
   @override
   int get newObjectsPerFrame => 0;
@@ -148,31 +121,17 @@ class TypedSimulation extends CustomSimulation {
   @override
   void moveParticles() {
     for (var i = 0; i < count; i++) {
-      _ax[i] = -(_x[i] - 0.5) * CustomSimulation.spring;
-      _ay[i] = -(_y[i] - 0.5) * CustomSimulation.spring;
-
-      _vx[i] += _ax[i] * CustomSimulation.dt;
-      _vy[i] += _ay[i] * CustomSimulation.dt;
-
-      _x[i] += _vx[i] * CustomSimulation.dt;
-      _y[i] += _vy[i] * CustomSimulation.dt;
-
-      if (_x[i] < 0.0 || _x[i] > 1.0) {
-        _x[i] = _x[i] < 0.0 ? 0.0 : 1.0;
-        _vx[i] = -_vx[i];
-      }
-      if (_y[i] < 0.0 || _y[i] > 1.0) {
-        _y[i] = _y[i] < 0.0 ? 0.0 : 1.0;
-        _vy[i] = -_vy[i];
-      }
+      _x[i] -= _y[i] * _speed[i] * CustomSimulation.dt;
+      _y[i] += _x[i] * _speed[i] * CustomSimulation.dt;
     }
   }
 
   @override
   void writePoints(double width, double height) {
+    final radius = min(width, height) / 2;
     for (var i = 0; i < count; i++) {
-      points[i * 2] = _x[i] * width;
-      points[i * 2 + 1] = _y[i] * height;
+      points[i * 2] = width / 2 + _x[i] * radius;
+      points[i * 2 + 1] = height / 2 + _y[i] * radius;
     }
   }
 }
