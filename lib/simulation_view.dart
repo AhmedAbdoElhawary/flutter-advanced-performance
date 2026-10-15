@@ -69,8 +69,12 @@ class _SimulationViewState extends State<SimulationView> with SingleTickerProvid
       children: [
         ValueListenableBuilder(
           valueListenable: _stats,
-          builder: (context, stats, _) =>
-              _StatsRow(stats: stats, count: widget.count, newObjects: _simulation.newObjectsPerFrame, color: color),
+          builder: (context, stats, _) => _StatsRow(
+            stats: stats,
+            count: widget.count,
+            newObjects: _simulation.newObjectsPerFrame,
+            color: color,
+          ),
         ),
         const SizedBox(height: 16),
         Expanded(
@@ -111,10 +115,11 @@ class _StatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const muted = TextStyle(fontSize: 34, color: Color(0xFFB8BCC2));
-    final objects = switch (newObjects) {
-      >= 1000000 => '${(newObjects / 1000000).toStringAsFixed(1)}M',
-      >= 1000 => '${(newObjects / 1000).round()}k',
-      _ => '$newObjects',
+    final perSecond = newObjects * stats.fps;
+    final objects = switch (perSecond) {
+      >= 1000000 => '${(perSecond / 1000000).round()}M',
+      >= 1000 => '${(perSecond / 1000).round()}k',
+      _ => '$perSecond',
     };
     final dots = '$count'.replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
     var info = '$dots dots';
@@ -137,7 +142,7 @@ class _StatsRow extends StatelessWidget {
               '${stats.fps} FPS',
               style: TextStyle(fontSize: 48, fontWeight: FontWeight.w600, color: color),
             ),
-            Text('$objects objects/frame', style: muted, overflow: TextOverflow.ellipsis),
+            Text('$objects objects/s', style: muted, overflow: TextOverflow.ellipsis),
           ],
         ),
         Text(info, style: muted, overflow: TextOverflow.ellipsis),
