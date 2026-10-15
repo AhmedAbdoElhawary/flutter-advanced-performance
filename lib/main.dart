@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'simulation.dart';
 import 'simulation_view.dart';
 
-void main() => runApp(const ParticleBenchApp());
+void main() {
+  runApp(const ParticleBenchApp());
+}
 
 class ParticleBenchApp extends StatelessWidget {
   const ParticleBenchApp({super.key});
