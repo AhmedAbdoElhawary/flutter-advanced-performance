@@ -4,6 +4,7 @@ import 'dart:ui' show PointMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_advanced_performance/list_vs_flloat64/simulation.dart';
+import 'package:flutter_advanced_performance/scale.dart';
 
 class SimulationView extends StatefulWidget {
   const SimulationView({super.key, required this.kind, required this.count});
@@ -62,6 +63,7 @@ class _SimulationViewState extends State<SimulationView> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
+    final scale = context.scale;
     final color = widget.kind.color;
 
     return Column(
@@ -76,10 +78,10 @@ class _SimulationViewState extends State<SimulationView> with SingleTickerProvid
             color: color,
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16 * scale),
         Expanded(
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(6 * scale),
             child: ColoredBox(
               color: const Color(0xFF0B0C0E),
               child: LayoutBuilder(
@@ -114,7 +116,8 @@ class _StatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const muted = TextStyle(fontSize: 34, color: Color(0xFFB8BCC2));
+    final scale = context.scale;
+    final muted = TextStyle(fontSize: 34 * scale, color: const Color(0xFFB8BCC2));
     final perSecond = newObjects * stats.fps;
     final objects = switch (perSecond) {
       >= 1000000 => '${(perSecond / 1000000).round()}M',
@@ -140,7 +143,7 @@ class _StatsRow extends StatelessWidget {
           children: [
             Text(
               '${stats.fps} FPS',
-              style: TextStyle(fontSize: 48, fontWeight: FontWeight.w600, color: color),
+              style: TextStyle(fontSize: 48 * scale, fontWeight: FontWeight.w600, color: color),
             ),
             Text('$objects objects/s', style: muted, overflow: TextOverflow.ellipsis),
           ],
