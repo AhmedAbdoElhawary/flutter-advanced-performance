@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../scale.dart';
 import 'simulation.dart';
 import 'simulation_view.dart';
 
@@ -16,22 +17,24 @@ class _BenchPageState extends State<BenchPage> {
 
   @override
   Widget build(BuildContext context) {
+    final scale = context.scale;
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          padding: EdgeInsets.fromLTRB(16 * scale, 8 * scale, 16 * scale, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(height: 150),
+              SizedBox(height: 150 * scale),
               Expanded(
                 child: SimulationView(key: ValueKey((_kind, _count)), kind: _kind, count: _count),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16 * scale),
               Row(
                 children: [
                   for (final kind in StorageKind.values) ...[
-                    if (kind != StorageKind.values.first) const SizedBox(width: 8),
+                    if (kind != StorageKind.values.first) SizedBox(width: 8 * scale),
                     Expanded(
                       child: _StorageButton(
                         kind: kind,
@@ -59,16 +62,17 @@ class _StorageButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scale = context.scale;
     final color = selected ? kind.color : const Color(0xFFB8BCC2);
 
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
-        minimumSize: const Size.fromHeight(65),
+        minimumSize: Size.fromHeight(65 * scale),
         foregroundColor: color,
         side: BorderSide(color: selected ? kind.color : const Color(0xFF2A2D33)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-        textStyle: TextStyle(fontSize: 30, fontWeight: selected ? FontWeight.w600 : FontWeight.w400),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6 * scale)),
+        textStyle: TextStyle(fontSize: 30 * scale, fontWeight: selected ? FontWeight.w600 : FontWeight.w400),
       ),
       child: Text(kind.label),
     );
