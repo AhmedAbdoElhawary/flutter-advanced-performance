@@ -21,6 +21,7 @@ class _BenchPageState extends State<BenchPage> {
   @override
   Widget build(BuildContext context) {
     final scale = context.scale;
+    final isPhone = MediaQuery.sizeOf(context).shortestSide < 600;
 
     return Scaffold(
       body: SafeArea(
@@ -29,15 +30,20 @@ class _BenchPageState extends State<BenchPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(height: 150 * scale),
+              SizedBox(height: (isPhone ? 300 : 150) * scale),
               Expanded(
-                child: SimulationView(key: ValueKey((_kind, _count)), kind: _kind, count: _count),
+                child: SimulationView(
+                  key: ValueKey((_kind, _count)),
+                  kind: _kind,
+                  count: _count,
+                ),
               ),
               SizedBox(height: 16 * scale),
               Row(
                 children: [
                   for (final kind in StorageKind.values) ...[
-                    if (kind != StorageKind.values.first) SizedBox(width: 8 * scale),
+                    if (kind != StorageKind.values.first)
+                      SizedBox(width: 8 * scale),
                     Expanded(
                       child: _StorageButton(
                         kind: kind,
@@ -71,7 +77,11 @@ class _BenchPageState extends State<BenchPage> {
 }
 
 class _StorageButton extends StatelessWidget {
-  const _StorageButton({required this.kind, required this.selected, required this.onPressed});
+  const _StorageButton({
+    required this.kind,
+    required this.selected,
+    required this.onPressed,
+  });
 
   final StorageKind kind;
   final bool selected;
@@ -87,9 +97,16 @@ class _StorageButton extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         minimumSize: Size.fromHeight(65 * scale),
         foregroundColor: color,
-        side: BorderSide(color: selected ? kind.color : const Color(0xFF2A2D33)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6 * scale)),
-        textStyle: TextStyle(fontSize: 30 * scale, fontWeight: selected ? FontWeight.w600 : FontWeight.w400),
+        side: BorderSide(
+          color: selected ? kind.color : const Color(0xFF2A2D33),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(6 * scale),
+        ),
+        textStyle: TextStyle(
+          fontSize: 30 * scale,
+          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+        ),
       ),
       child: Text(kind.label),
     );

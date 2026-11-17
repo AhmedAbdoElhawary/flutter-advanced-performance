@@ -4,8 +4,8 @@ import 'dart:ui' show Color, Size;
 import 'package:flutter/foundation.dart';
 
 enum StorageKind {
-  boxed('List<double>', Color(0xFFE5484D)),
-  typed('Float64List', Color(0xFF46D17F));
+  boxed('List<double>', Color.fromARGB(255, 235, 59, 65)),
+  typed('Float64List', Color.fromARGB(255, 0, 211, 88));
 
   const StorageKind(this.label, this.color);
 
