@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../scale.dart';
 import 'simulation.dart';
@@ -13,7 +13,10 @@ class BenchPage extends StatefulWidget {
 
 class _BenchPageState extends State<BenchPage> {
   StorageKind _kind = StorageKind.boxed;
-  final int _count = 100000;
+  int _count = 50000;
+
+  /// only the slider moves while dragging, rebuilding the simulation every tick is too heavy
+  double _sliderValue = 200000;
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +47,20 @@ class _BenchPageState extends State<BenchPage> {
                     ),
                   ],
                 ],
+              ),
+              SizedBox(height: 16 * scale),
+              Text(
+                '${_sliderValue ~/ 1000}K',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 24 * scale),
+              ),
+              Slider(
+                value: _sliderValue,
+                min: 10000,
+                max: 200000,
+                divisions: 49,
+                onChanged: (value) => setState(() => _sliderValue = value),
+                onChangeEnd: (value) => setState(() => _count = value.toInt()),
               ),
             ],
           ),

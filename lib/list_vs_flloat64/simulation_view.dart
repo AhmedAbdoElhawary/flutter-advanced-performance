@@ -1,7 +1,7 @@
 import 'dart:math' show pi;
 import 'dart:ui' show PointMode;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_advanced_performance/list_vs_flloat64/simulation.dart';
 import 'package:flutter_advanced_performance/scale.dart';
@@ -125,12 +125,12 @@ class _StatsRow extends StatelessWidget {
       _ => '$perSecond',
     };
     final dots = '$count'.replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
-    var info = '$dots dots';
+    var info = '';
     if (stats.fps > 0) {
       final timeScale = stats.fps * CustomSimulation.dt * CustomSimulation.stepsPerFrame;
       final fastestLap = (2 * pi / CustomSimulation.maxSpeed / timeScale).round();
       final slowestLap = (2 * pi / CustomSimulation.minSpeed / timeScale).round();
-      info += ' · 1 lap every $fastestLap–$slowestLap s';
+      info = '1 lap every $fastestLap–$slowestLap s';
     }
 
     return Column(
@@ -145,10 +145,18 @@ class _StatsRow extends StatelessWidget {
               '${stats.fps} FPS',
               style: TextStyle(fontSize: 48 * scale, fontWeight: FontWeight.w600, color: color),
             ),
-            Text('$objects objects/s', style: muted, overflow: TextOverflow.ellipsis),
+            Text('~$objects new objects/s', style: muted, overflow: TextOverflow.ellipsis),
           ],
         ),
-        Text(info, style: muted, overflow: TextOverflow.ellipsis),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text('$dots dots', style: muted, overflow: TextOverflow.ellipsis),
+            Text(info, style: muted, overflow: TextOverflow.ellipsis),
+          ],
+        ),
       ],
     );
   }
@@ -158,7 +166,7 @@ class ParticlePainter extends CustomPainter {
   ParticlePainter(this.simulation, Color color)
     : _dotPaint = Paint()
         ..color = color
-        ..strokeWidth = 2,
+        ..strokeWidth = 1,
       super(repaint: simulation);
 
   final CustomSimulation simulation;

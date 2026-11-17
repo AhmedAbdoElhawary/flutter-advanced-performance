@@ -22,8 +22,8 @@ abstract class CustomSimulation extends ChangeNotifier {
 
   factory CustomSimulation.create(StorageKind kind, int count) {
     return switch (kind) {
-      StorageKind.boxed => BoxedSimulation(count),
-      StorageKind.typed => TypedSimulation(count),
+      StorageKind.boxed => ListSimulation(count),
+      StorageKind.typed => FloatSimulation(count),
     };
   }
 
@@ -63,8 +63,8 @@ abstract class CustomSimulation extends ChangeNotifier {
   }
 }
 
-class BoxedSimulation extends CustomSimulation {
-  BoxedSimulation(super.count) : _x = _zeros(count), _y = _zeros(count), _speed = _zeros(count) {
+class ListSimulation extends CustomSimulation {
+  ListSimulation(super.count) : _x = _zeros(count), _y = _zeros(count), _speed = _zeros(count) {
     seed((i, x, y, speed) {
       _x[i] = x;
       _y[i] = y;
@@ -99,8 +99,8 @@ class BoxedSimulation extends CustomSimulation {
   }
 }
 
-class TypedSimulation extends CustomSimulation {
-  TypedSimulation(super.count)
+class FloatSimulation extends CustomSimulation {
+  FloatSimulation(super.count)
     : _x = Float64List(count),
       _y = Float64List(count),
       _speed = Float64List(count) {
