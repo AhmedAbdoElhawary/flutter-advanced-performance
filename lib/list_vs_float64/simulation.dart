@@ -13,10 +13,10 @@ enum StorageKind {
   final Color color;
 }
 
-/// For [moveParticles] and [writePoints] cannot be in the contract, why?
-/// becuase [_x], [_y], and [_speed],
-/// you cannot unified them and find the common between List<double> and Float64,
-///
+/// [moveParticles] and [writePoints] are written out in each subclass on purpose.
+/// The loops are identical, but [_x], [_y] and [_speed] must keep their exact
+/// static type (List<double> or Float64List). Sharing one loop through a common
+/// List<double> type would hide that difference from the compiler.
 abstract class CustomSimulation extends ChangeNotifier {
   CustomSimulation(this.count) : points = Float32List(count * 2);
 
@@ -34,8 +34,6 @@ abstract class CustomSimulation extends ChangeNotifier {
 
   final int count;
   final Float32List points;
-
-  int get newObjectsPerFrame;
 
   void step(Size size) {
     for (var i = 0; i < stepsPerFrame; i++) {
@@ -72,14 +70,12 @@ class ListSimulation extends CustomSimulation {
     });
   }
 
-  static List<double> _zeros(int count) => List.generate(count, (_) => 0.0);
+  // Fixed-length, like Float64List, so the storage type is the only difference.
+  static List<double> _zeros(int count) => List<double>.filled(count, 0.0);
 
   final List<double> _x;
   final List<double> _y;
   final List<double> _speed;
-
-  @override
-  int get newObjectsPerFrame => count * 2 * CustomSimulation.stepsPerFrame;
 
   @override
   void moveParticles() {
@@ -114,9 +110,6 @@ class FloatSimulation extends CustomSimulation {
   final Float64List _x;
   final Float64List _y;
   final Float64List _speed;
-
-  @override
-  int get newObjectsPerFrame => 0;
 
   @override
   void moveParticles() {

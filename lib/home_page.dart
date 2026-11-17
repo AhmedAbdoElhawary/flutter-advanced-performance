@@ -1,6 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
-import 'list_vs_flloat64/bench_page.dart';
+import 'list_vs_float64/bench_page.dart';
 import 'scale.dart';
 
 class HomePage extends StatelessWidget {
