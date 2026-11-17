@@ -64,7 +64,10 @@ abstract class CustomSimulation extends ChangeNotifier {
 }
 
 class ListSimulation extends CustomSimulation {
-  ListSimulation(super.count) : _x = _zeros(count), _y = _zeros(count), _speed = _zeros(count) {
+  ListSimulation(super.count)
+    : _x = _zeros(count),
+      _y = _zeros(count),
+      _speed = _zeros(count) {
     seed((i, x, y, speed) {
       _x[i] = x;
       _y[i] = y;
@@ -72,7 +75,7 @@ class ListSimulation extends CustomSimulation {
     });
   }
 
-  static List<double> _zeros(int count) => List.generate(count, (_) => 0.0);
+  static List<double> _zeros(int count) => List.filled(count, 0.0);
 
   final List<double> _x;
   final List<double> _y;

@@ -3,7 +3,7 @@ import 'dart:ui' show PointMode;
 
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter_advanced_performance/list_vs_flloat64/simulation.dart';
+import 'package:flutter_advanced_performance/list_vs_float64/simulation.dart';
 import 'package:flutter_advanced_performance/scale.dart';
 
 class SimulationView extends StatefulWidget {

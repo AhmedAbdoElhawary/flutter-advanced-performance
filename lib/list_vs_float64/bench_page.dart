@@ -16,7 +16,7 @@ class _BenchPageState extends State<BenchPage> {
   int _count = 50000;
 
   /// only the slider moves while dragging, rebuilding the simulation every tick is too heavy
-  double _sliderValue = 200000;
+  double _sliderValue = 50000;
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +57,7 @@ class _BenchPageState extends State<BenchPage> {
               Slider(
                 value: _sliderValue,
                 min: 10000,
-                max: 200000,
+                max: 100000,
                 divisions: 49,
                 onChanged: (value) => setState(() => _sliderValue = value),
                 onChangeEnd: (value) => setState(() => _count = value.toInt()),
