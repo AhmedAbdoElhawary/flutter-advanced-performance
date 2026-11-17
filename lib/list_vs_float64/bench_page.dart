@@ -15,7 +15,7 @@ class _BenchPageState extends State<BenchPage> {
   StorageKind _kind = StorageKind.boxed;
   int _count = 50000;
 
-  /// only the slider moves while dragging, rebuilding the simulation every tick is too heavy
+  /// Only the slider label moves while dragging; the simulation is rebuilt when the drag ends.
   double _sliderValue = 50000;
 
   @override
@@ -56,9 +56,9 @@ class _BenchPageState extends State<BenchPage> {
               ),
               Slider(
                 value: _sliderValue,
-                min: 10000,
-                max: 100000,
-                divisions: 49,
+                min: 1000,
+                max: 200000,
+                divisions: 199,
                 onChanged: (value) => setState(() => _sliderValue = value),
                 onChangeEnd: (value) => setState(() => _count = value.toInt()),
               ),

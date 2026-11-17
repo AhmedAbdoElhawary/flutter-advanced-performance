@@ -25,6 +25,7 @@ class _SimulationViewState extends State<SimulationView> with SingleTickerProvid
   Size _fieldSize = Size.zero;
   Duration _windowStart = Duration.zero;
   int _frames = 0;
+  int _stepMicros = 0;
 
   @override
   void initState() {
@@ -50,14 +51,17 @@ class _SimulationViewState extends State<SimulationView> with SingleTickerProvid
     _stopwatch.stop();
 
     _frames++;
+    _stepMicros += _stopwatch.elapsedMicroseconds;
 
     final window = elapsed - _windowStart;
     if (window < const Duration(seconds: 1)) return;
 
     _stats.value = FrameStats(
       fps: (_frames * Duration.microsecondsPerSecond / window.inMicroseconds).round(),
+      stepMs: _stepMicros / _frames / 1000,
     );
     _frames = 0;
+    _stepMicros = 0;
     _windowStart = elapsed;
   }
 
@@ -71,12 +75,7 @@ class _SimulationViewState extends State<SimulationView> with SingleTickerProvid
       children: [
         ValueListenableBuilder(
           valueListenable: _stats,
-          builder: (context, stats, _) => _StatsRow(
-            stats: stats,
-            count: widget.count,
-            newObjects: _simulation.newObjectsPerFrame,
-            color: color,
-          ),
+          builder: (context, stats, _) => _StatsRow(stats: stats, count: widget.count, color: color),
         ),
         SizedBox(height: 16 * scale),
         Expanded(
@@ -99,31 +98,27 @@ class _SimulationViewState extends State<SimulationView> with SingleTickerProvid
 }
 
 class FrameStats {
-  const FrameStats({required this.fps});
+  const FrameStats({required this.fps, required this.stepMs});
 
-  static const empty = FrameStats(fps: 0);
+  static const empty = FrameStats(fps: 0, stepMs: 0);
 
   final int fps;
+
+  /// Average time of one simulation step per frame (64 moves + writing the points), measured with a Stopwatch.
+  final double stepMs;
 }
 
 class _StatsRow extends StatelessWidget {
-  const _StatsRow({required this.stats, required this.count, required this.newObjects, required this.color});
+  const _StatsRow({required this.stats, required this.count, required this.color});
 
   final FrameStats stats;
   final int count;
-  final int newObjects;
   final Color color;
 
   @override
   Widget build(BuildContext context) {
     final scale = context.scale;
     final muted = TextStyle(fontSize: 34 * scale, color: const Color(0xFFB8BCC2));
-    final perSecond = newObjects * stats.fps;
-    final objects = switch (perSecond) {
-      >= 1000000 => '${(perSecond / 1000000).round()}M',
-      >= 1000 => '${(perSecond / 1000).round()}k',
-      _ => '$perSecond',
-    };
     final dots = '$count'.replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
     var info = '';
     if (stats.fps > 0) {
@@ -145,7 +140,7 @@ class _StatsRow extends StatelessWidget {
               '${stats.fps} FPS',
               style: TextStyle(fontSize: 48 * scale, fontWeight: FontWeight.w600, color: color),
             ),
-            Text('~$objects new objects/s', style: muted, overflow: TextOverflow.ellipsis),
+            Text('sim ${stats.stepMs.toStringAsFixed(1)} ms / frame', style: muted, overflow: TextOverflow.ellipsis),
           ],
         ),
         Row(
